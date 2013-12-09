@@ -12,7 +12,7 @@ exports.get = function(req, res) {
 exports.post = function(req, res) {
     var name = req.body.name,
         ip = req.body.ip;
-    if (name && ip && name.length < 30 && ip.length < 30) {
+    if (name && ip && name.length < 30 && ip.length < 30 && isNaN(name) && isNaN(ip)) {
         req.mongo.servers.insert({name:name, ip:ip, users: []}, function(err, resp) {
             if (err) {
                 res.render('error.jade', {msg: err});
