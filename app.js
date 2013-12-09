@@ -7,6 +7,7 @@ var express = require('express')
 , http = require('http')
 , path = require('path')
 , url = require('url')
+, newrelic = require('newrelic')
 
 , routes = require('./routes')
 , server = require('./routes/server')
