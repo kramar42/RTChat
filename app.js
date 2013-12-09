@@ -30,7 +30,7 @@ app.configure(function(){
     app.redis = redis_client;
 
     //mongo client
-    mongo_client.connect('mongodb://127.0.0.1:27017/rtchat', function(err, db) {
+    mongo_client.connect(process.env.MONGOLAB_URI, function(err, db) {
         if (err) throw err;
 
         app.mongo = {};
