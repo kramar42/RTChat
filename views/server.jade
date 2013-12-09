@@ -1,0 +1,19 @@
+extends layout
+block title
+    title= "Servers"
+block content
+    table
+        tr
+            td Name
+            td IP
+            td Users
+        - each server in vars.servers
+            tr
+            td= server.name
+            td= server.ip
+            td= server.users.length
+    form(method="post", action="#")
+        p Add new server
+        input(name="name", type="text", placeholder="Name")
+        input(name="ip", type="text", placeholder="IP")
+        input(name="submit", type="submit", value="Add")
