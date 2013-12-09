@@ -6,17 +6,21 @@
 var express = require('express')
 , http = require('http')
 , path = require('path')
+, url = require('url')
 
 , routes = require('./routes')
 , server = require('./routes/server')
 
 , redis = require('redis')
-, redis_client = redis.createClient()
+, redis_url = url.parse(process.env.REDISCLOUD_URL)
+, redis_client = redis.createClient(redis_url.port, redis_url.hostname,
+        {no_ready_check: true})
 , mongo_client = require('mongodb').MongoClient;
 
 var app = express();
 
 app.configure(function(){
+    redis_client.auth(redis_url.auth.split(":")[1]);
     //on redis error
     redis_client.on('error', function (err) {
         console.log('Redis error ' + err);
