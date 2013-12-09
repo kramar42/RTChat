@@ -8,7 +8,6 @@ var express = require('express')
 , path = require('path')
 
 , routes = require('./routes')
-, user = require('./routes/user')
 , server = require('./routes/server')
 
 , redis = require('redis')
