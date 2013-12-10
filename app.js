@@ -19,6 +19,8 @@ var express = require('express')
 , mongo_client = require('mongodb').MongoClient;
 
 var app = express();
+console.log(process.env.REDISCLOUD_URL);
+console.log(process.env.MONGOLAB_URI);
 
 app.configure(function(){
     redis_client.auth(redis_url.auth.split(":")[1]);
