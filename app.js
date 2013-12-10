@@ -13,17 +13,21 @@ var express = require('express')
 , server = require('./routes/server')
 
 , redis = require('redis')
-, redis_url = url.parse(process.env.REDISCLOUD_URL)
-, redis_client = redis.createClient(redis_url.port, redis_url.hostname,
-        {no_ready_check: true})
 , mongo_client = require('mongodb').MongoClient;
 
 var app = express();
-console.log(process.env.REDISCLOUD_URL);
-console.log(process.env.MONGOLAB_URI);
 
 app.configure(function(){
-    redis_client.auth(redis_url.auth.split(":")[1]);
+    var redis_url, redis_client;
+    if (process.env.REDISCLOUD_URL) {
+        redis_url = url.parse(process.env.REDISCLOUD_URL);
+        redis_client = redis.createClient(redis_url.port, redis_url.hostname,
+            {no_ready_check: true});
+        redis_client.auth(redis_url.auth.split(":")[1]);
+    } else {
+        redis_client = redis.createClient();
+    }
+
     //on redis error
     redis_client.on('error', function (err) {
         console.log('Redis error ' + err);
@@ -33,7 +37,8 @@ app.configure(function(){
     app.redis = redis_client;
 
     //mongo client
-    mongo_client.connect(process.env.MONGOLAB_URI, function(err, db) {
+    mongo_client.connect(process.env.MONGOLAB_URI || 'mongodb://127.0.0.1:27017/rtchat',
+        function(err, db) {
         if (err) throw err;
 
         app.mongo = {};
