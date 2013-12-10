@@ -1,0 +1,15 @@
+extends layout
+block title
+    title= "Servers"
+block content
+    table
+        tr
+            td Name
+            td IP
+            td Users
+        - each server in servers
+            tr
+            td
+                a(href='/servers/' + server.name)= server.name
+            td= server.ip
+            td= server.users.length

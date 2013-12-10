@@ -1,19 +1,20 @@
 extends layout
 block title
-    title= "Servers"
+    title= "Server"
 block content
+    a(href="/servers")= "Servers"
     table
         tr
             td Name
             td IP
             td Users
-        - each server in vars.servers
-            tr
+        tr
             td= server.name
             td= server.ip
             td= server.users.length
-    form(method="post", action="#")
-        p Add new server
-        input(name="name", type="text", placeholder="Name")
-        input(name="ip", type="text", placeholder="IP")
-        input(name="submit", type="submit", value="Add")
+    table
+        tr
+            td Username
+        - each user in server.users
+            tr
+                td= user.name

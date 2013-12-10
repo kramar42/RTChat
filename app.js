@@ -10,7 +10,7 @@ var express = require('express')
 , newrelic = require('newrelic')
 
 , routes = require('./routes')
-, server = require('./routes/server')
+, servers = require('./routes/servers')
 
 , redis = require('redis')
 , mongo_client = require('mongodb').MongoClient;
@@ -52,11 +52,11 @@ app.configure(function(){
     app.set('view engine', 'jade');
 
     //middleware
+    app.use(app.router);
     app.use(express.favicon());
     app.use(express.logger('dev'));
     app.use(express.bodyParser());
     app.use(express.methodOverride());
-    app.use(app.router);
     app.use(express.static(path.join(__dirname, 'public')));
 
     //add db-s to request
@@ -65,6 +65,22 @@ app.configure(function(){
         req.redis = app.redis;
         next();
     });
+
+    //params
+    app.param(function(name, fn) {
+      if (fn instanceof RegExp) {
+        return function(req, res, next, val) {
+          var captures;
+          if (captures = fn.exec(String(val))) {
+            req.params[name] = captures;
+            next();
+          } else {
+            next('route');
+          }
+        }
+      }
+    });
+    app.param('server_name', /\w+$/);
 });
 
 app.configure('development', function() {
@@ -75,6 +91,8 @@ app.listen(app.get('port'), function() {
     console.log('Express server listening on port ' + app.get('port'));
 });
 
+
 app.get('/', routes.index);
-app.get('/server', server.get);
-app.post('/server', server.post);
+app.get('/servers', servers.get);
+app.post('/servers', servers.post);
+app.get('/servers/:server_name', servers.view);
