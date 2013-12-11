@@ -1,5 +1,9 @@
 extends layout
-
+block title
+    title= "RTChat"
 block content
-  h1= title
-  p Welcome to #{title}
+    form(method="post", action="/login")
+        p Connect to server
+        input(name="username", type="text", placeholder="username", autofocus)
+        input(name="server", type="text", placeholder="server", value="#")
+        input(name="submit", type="submit", value="Add")
