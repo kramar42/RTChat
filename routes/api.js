@@ -18,7 +18,7 @@ exports.servers = function(req, res) {
 
 exports.login = function(req, res) {
     var username = req.params.username,
-        fingerprint = [req.header('host'), req.header('user-agent'), req.ip, username],
+        fingerprint = [req.header('host'), req.ip, username],
         fingerstring = fingerprint.join('*'),
         hash = xxhash.hash(new Buffer(fingerstring), 0x28a0bb24);
 
@@ -37,7 +37,7 @@ exports.login = function(req, res) {
 
 exports.me = function(req, res) {
     var username = req.params.username,
-        fingerprint = [req.header('host'), req.header('user-agent'), req.ip, username],
+        fingerprint = [req.header('host'), req.ip, username],
         fingerstring = fingerprint.join('*'),
         hash = xxhash.hash(new Buffer(fingerstring), 0x28a0bb24);
 
