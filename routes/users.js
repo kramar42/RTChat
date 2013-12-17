@@ -58,3 +58,17 @@ exports.loginp = function(req, res) {
 		}
 	});
 };
+
+exports.logout = function(req, res) {
+    var hash = gethash(req);
+
+    req.redis.exists(hash, function(err, exists) {
+        if (err) throw err;
+        if (exists) {
+            req.redis.del(hash, function(err) {
+                if (err) throw err;
+                res.redirect('/');
+            });
+        } else res.redirect('/');
+    });
+}

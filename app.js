@@ -110,3 +110,4 @@ app.get('/users', users.list);
 app.get('/user/:id', users.user);
 app.get('/login', users.login);
 app.post('/login', users.loginp);
+app.get('/logout', users.logout);
