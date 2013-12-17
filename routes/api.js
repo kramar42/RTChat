@@ -3,17 +3,14 @@
  * API
  */
 
-var xxhash = require('xxhash');
+var gethash = require('./hash').hash;
 
 exports.ping = function(req, res) {
     res.send('pong');
 };
 
 exports.login = function(req, res) {
-    var username = req.params.username,
-        fingerprint = [req.header('host'), req.ip, username],
-        fingerprint_s = fingerprint.join(''),
-        hash = xxhash.hash(new Buffer(fingerprint_s), 0x28a0bb24);
+    var hash = gethash(req);
 
     req.redis.exists(hash, function(err, exists) {
         if (err) throw err;
@@ -22,8 +19,7 @@ exports.login = function(req, res) {
         } else {
 			req.redis.multi()
 				.expire(hash, 60*30)
-				.hmset(hash, {'host': fingerprint[0], 'ip': fingerprint[1],
-							  'name': fingerprint[2]})
+				.hmset(hash, {'name': req.params.username})
 				.exec(function(err) {
 					if (err) throw err;
 					res.send('success');
@@ -33,10 +29,7 @@ exports.login = function(req, res) {
 };
 
 exports.me = function(req, res) {
-    var username = req.params.username,
-        fingerprint = [req.header('host'), req.ip, username],
-        fingerprint_s = fingerprint.join(''),
-        hash = xxhash.hash(new Buffer(fingerprint_s), 0x28a0bb24);
+    var hash = gethash(req);
 
     req.redis.multi()
 		.expire(hash, 60*30)

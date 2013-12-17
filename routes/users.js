@@ -3,6 +3,8 @@
  * USERS
  */
 
+var gethash = require('./hash').hash;
+
 exports.list = function(req, res) {
 	req.redis.keys('*', function(err, keys) {
 		if (err) throw err;
@@ -24,3 +26,22 @@ exports.user = function(req, res) {
 		res.send(result);
 	});
 }
+
+exports.login = function(req, res) {
+    var hash = gethash(req);
+
+    req.redis.exists(hash, function(err, exists) {
+        if (err) throw err;
+        if (exists) {
+            res.redirect('/');
+        } else {
+			req.redis.multi()
+				.expire(hash, 60*30)
+				.hmset(hash, {'name': req.params.username})
+				.exec(function(err) {
+					if (err) throw err;
+					res.redirect('/');
+			});
+		}
+	});
+};

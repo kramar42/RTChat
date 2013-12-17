@@ -108,3 +108,4 @@ app.get('/', function(req, res) {res.redirect('/room/test');});
 
 app.get('/users', users.list);
 app.get('/user/:id', users.user);
+app.get('/login/:username', users.login);
