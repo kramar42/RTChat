@@ -9,9 +9,9 @@ var express = require('express')
 , url = require('url')
 , newrelic = require('newrelic')
 
-, routes = require('./routes')
 , api = require('./routes/api')
-, servers = require('./routes/servers')
+, users = require('./routes/users')
+, rooms = require('./routes/rooms')
 
 , redis = require('redis')
 , mongo_client = require('mongodb').MongoClient;
@@ -38,13 +38,15 @@ app.configure(function(){
     app.redis = redis_client;
 
     //mongo client
-    mongo_client.connect(process.env.MONGOLAB_URI || 'mongodb://127.0.0.1:27017/rtchat',
+    mongo_client.connect(process.env.MONGOLAB_URI ||
+                         'mongodb://127.0.0.1:27017/rtchat',
         function(err, db) {
         if (err) throw err;
 
         app.mongo = {};
-        app.mongo.servers = db.collection('servers');
-        app.mongo.servers.ensureIndex({name: 1}, {unique: true, sparse: true}, console.log);
+        app.mongo.test = db.collection('test');
+        app.mongo.test.ensureIndex({date: 1}, {unique: true, sparse: true},
+                                  function(err) {});
     });
 
     //set vars
@@ -53,11 +55,11 @@ app.configure(function(){
     app.set('view engine', 'jade');
 
     //middleware
-    app.use(app.router);
     app.use(express.favicon());
     app.use(express.logger('dev'));
     app.use(express.bodyParser());
     app.use(express.methodOverride());
+    app.use(app.router);
     app.use(express.static(path.join(__dirname, 'public')));
 
     //add db-s to request
@@ -81,8 +83,9 @@ app.configure(function(){
             }
         }
     });
-    app.param('server_name', /\w+/);
+    app.param('id', /\d+/);
     app.param('username', /\w+/);
+    app.param('roomname', /\w+/);
 });
 
 app.configure('development', function() {
@@ -93,12 +96,15 @@ app.listen(app.get('port'), function() {
     console.log('Express server listening on port ' + app.get('port'));
 });
 
-
-app.get('/index', routes.index);
-app.post('/login', routes.login);
-app.get('/servers', servers.get);
-app.get('/servers/:server_name', servers.view);
-app.get('/api/me/:username', api.me);
 app.get('/api/ping', api.ping);
+app.get('/api/users', api.users);
+app.get('/api/me/:username', api.me);
 app.get('/api/login/:username', api.login);
-app.get('/api/servers', api.servers);
+
+app.get('/rooms', rooms.list);
+app.get('/room/:roomname', rooms.room);
+app.post('/room/:roomname', rooms.post);
+app.get('/', function(req, res) {res.redirect('/room/test');});
+
+app.get('/users', users.list);
+app.get('/user/:id', users.user);

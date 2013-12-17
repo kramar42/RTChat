@@ -1,0 +1,10 @@
+extends layout
+block title
+    title= "Rooms"
+block content
+    table
+        - for (var i = 0; i < rooms.length; i++) {
+            tr
+            td
+                a(href='/room/' + rooms[i])= rooms[i]
+        - }
