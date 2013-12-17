@@ -3,13 +3,15 @@ block title
     title= "Room"
 block content
     a(href="/rooms")= "Rooms"
+    br
+    br
 
     if name
         form(method="post", action="#")
             input(type="text", name="message", autofocus="autofocus")
-            input(type="submit", name="submit", value="submit")
+            input(type="submit", name="submit", value="submit", hidden)
     else
-        p= "You're not logged in"
+        a(href="/login")= "You're not logged in"
     div
     - each message in messages 
         p= message.name + ": " + message.message
