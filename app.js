@@ -18,7 +18,7 @@ var express = require('express')
 
 var app = express();
 
-app.configure(function(){
+app.configure(function() {
     var redis_url, redis_client;
     if (process.env.REDISCLOUD_URL) {
         redis_url = url.parse(process.env.REDISCLOUD_URL);
