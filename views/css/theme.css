@@ -109,8 +109,8 @@ header {
 /* Footer
 -------------------------------------------------- */
 #footer {
-	min-height: 260px;
-	margin-top: 140px;
+	min-height: 130px;
+	margin-top: 50px;
 	background-color: #252528;
 	color: #fff;
 	padding-top: 35px;
@@ -238,11 +238,10 @@ header {
 	background-color:#2190DB;
 }
 #footer .credits {
-	border-top: 1px solid #343437;
-	padding: 10px 0px 60px 0px;
+	padding: 0px 0px 30px 0px;
 }
 #footer .credits .social {
-	margin-top: 30px;
+	margin-top: 10px;
 	text-align: center;
 }
 #footer .credits .social a {
@@ -252,7 +251,7 @@ header {
 	color: #a6a6a7;
 	font-style: italic;
 	text-align: center;
-	margin-top: 30px;
+	margin-top: 20px;
 }
 #footer .credits .social a {
 	margin: 10px;
