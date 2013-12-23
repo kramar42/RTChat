@@ -7,7 +7,7 @@ var express = require('express')
 , http = require('http')
 , path = require('path')
 , url = require('url')
-, newrelic = require('newrelic')
+, request = require('request')
 
 , api = require('./routes/api')
 , users = require('./routes/users')
@@ -50,17 +50,20 @@ app.configure(function() {
     });
 
     //set vars
-    app.set('port', process.env.PORT || 3000);
+    app.set('port', process.env.PORT || 8085);
     app.set('views', __dirname + '/views');
     app.set('view engine', 'jade');
 
     //middleware
+    app.use(express.cookieParser());
+    app.use(express.session({secret: 'na.xuf8s01jj2g.z9'}));
     app.use(express.favicon());
     app.use(express.logger('dev'));
     app.use(express.bodyParser());
     app.use(express.methodOverride());
     app.use(app.router);
     app.use(express.static(path.join(__dirname, 'public')));
+
 
     //add db-s to request
     app.all('*', function(req, res, next) {
@@ -96,18 +99,51 @@ app.listen(app.get('port'), function() {
     console.log('Express server listening on port ' + app.get('port'));
 });
 
-app.get('/api/ping', api.ping);
-app.get('/api/users', api.users);
-app.get('/api/me/:username', api.me);
-app.get('/api/login/:username', api.login);
+var APP_ID = '5f0c97b3ac2fe0f8c7ffedcf058140fe',
+    APP_SECRET = 'd7c79d9885e3beba070c18669591955a';
 
-app.get('/rooms', rooms.list);
-app.get('/room/:roomname', rooms.room);
-app.post('/room/:roomname', rooms.post);
-app.get('/', function(req, res) {res.redirect('/room/test');});
+app.get('/', function(req, res) {
+    var user = (req.session.user || false)
+    res.render('index.jade', {user: user, email: user['email']});
+});
 
-app.get('/users', users.list);
-app.get('/user/:id', users.user);
-app.get('/login', users.login);
-app.post('/login', users.loginp);
-app.get('/logout', users.logout);
+app.get('/login', function(req, res) {
+    var code = req.param('code');
+    var url = 'https://clef.io/api/v1/authorize';
+    var form = {app_id:APP_ID, app_secret:APP_SECRET, code:code};
+
+    request.post({url:url, form:form}, function(error, response, body) {
+        var token = JSON.parse(body)['access_token'];
+        request.get('https://clef.io/api/v1/info?access_token=' + token,
+            function(error, response, body) {
+                /* {
+                  info: {
+                    id: '12345',
+                    first_name: 'Jesse',
+                    last_name: 'Pollak',
+                    phone_number: '1234567890',
+                    email: 'jesse@getclef.com'
+                  },
+                  success: true
+                }
+                */
+                req.session.user = JSON.parse(body)['info'];
+                console.log(req.session.user);
+                res.redirect('/');
+            });
+    });
+});
+
+app.post('/logout', function(req, res) {
+    var url = "https://clef.io/api/v1/logout";
+    var logout_token = req.body['logout_token'];
+    if (logout_token) {
+        console.log(logout_token);
+        form = {logout_token:logout_token,app_id:APP_ID,app_secret:APP_SECRET};
+        request.post({url:url, form:form}, function(err, response, body) {
+            console.log(JSON.parse(body)['clef_id']);
+            res.send('ok');
+        });
+    }
+});
+
