@@ -360,6 +360,13 @@
 #sign_up2 .signin_box .box .form input[type="submit"]:hover{
 	background: #252528;
 }
+.clef-wrapper {
+	border: 1px solid red;
+	margin-bottom: 20px;
+}
+.clef-button {
+	margin: 0 auto;
+}
 
 /* Responsive
 -------------------------------------------------- */
