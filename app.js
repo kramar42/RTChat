@@ -44,8 +44,8 @@ app.configure(function() {
         if (err) throw err;
 
         app.mongo = {};
-        app.mongo.test = db.collection('test');
-        app.mongo.test.ensureIndex({date: 1}, {unique: true, sparse: true},
+        app.mongo.users = db.collection('users');
+        app.mongo.users.ensureIndex({email: 1}, {unique: true, sparse: true},
                                   function(err) {});
     });
 
@@ -63,6 +63,14 @@ app.configure(function() {
     app.use(express.methodOverride());
     app.use(app.router);
     app.use(express.static(path.join(__dirname, 'public')));
+
+    app.all('/', function checkAuth(req, res, next) {
+        if (!req.session.user) {
+            res.render('login.jade');
+        } else {
+            next();
+        }
+    });
 
 
     //add db-s to request
@@ -103,11 +111,11 @@ var APP_ID = '5f0c97b3ac2fe0f8c7ffedcf058140fe',
     APP_SECRET = 'd7c79d9885e3beba070c18669591955a';
 
 app.get('/', function(req, res) {
-    var user = (req.session.user || false)
-    res.render('index.jade', {user: user, email: user['email']});
+    var user = req.session.user;
+    res.render('index.jade', {user: user});
 });
 
-app.get('/login', function(req, res) {
+app.get('/oauth2/clef', function(req, res) {
     var code = req.param('code');
     var url = 'https://clef.io/api/v1/authorize';
     var form = {app_id:APP_ID, app_secret:APP_SECRET, code:code};
@@ -127,14 +135,14 @@ app.get('/login', function(req, res) {
                   success: true
                 }
                 */
-                req.session.user = JSON.parse(body)['info'];
-                console.log(req.session.user);
+                resp = JSON.parse(body)['info'];
+                req.session.user = {'email': resp['email']};
                 res.redirect('/');
             });
     });
 });
 
-app.post('/logout', function(req, res) {
+app.post('/oauth2/clef/logout', function(req, res) {
     var url = "https://clef.io/api/v1/logout";
     var logout_token = req.body['logout_token'];
     if (logout_token) {
@@ -145,5 +153,41 @@ app.post('/logout', function(req, res) {
             res.send('ok');
         });
     }
+});
+
+app.get('/getfriends', function(req, res) {
+    req.mongo.users.findOne({'email': req.session.user.email}, {'friends': true}, function(err, friends) {
+        if (err) throw err;
+        var result = [];
+        var multi = req.redis.multi();
+        friends['friends'].forEach(function(friend) {
+            multi.exists(friend, function(err, exists) {
+                if (err) throw err;
+                if (exists) result.push(friend);
+            });
+        });
+        multi.exec(function(err, r) {
+            if (err) throw err;
+            res.send(result);
+        });
+    });
+});
+
+app.get('/getonlinefriends', function(req, res) {
+    req.mongo.users.findOne({'email': req.session.user.email}, {'_id': true}, function(err, friends) {
+        if (err) throw err;
+        var result = [];
+        var multi = req.redis.multi();
+        friends['friends'].forEach(function(friend) {
+            multi.exists(friend, function(err, exists) {
+                if (err) throw err;
+                if (exists) result.push(friend);
+            });
+        });
+        multi.exec(function(err, r) {
+            if (err) throw err;
+            res.send(result);
+        });
+    });
 });
 
