@@ -63,6 +63,7 @@
 }
 #team .people .bio_box img{
 	float: left;
+	width: 171px;
 }
 #team .people .bio_boxr img{
 	margin-left: 38px;
