@@ -1,0 +1,82 @@
+.section_header h3 {
+}
+
+#portfolio_tem{
+	margin-top: 10px;
+}
+#portfolio_tem .left_box{
+	margin-left: 0;
+	text-align: center;
+	margin-top: -40px;
+}
+#portfolio_tem .right_box{
+	float: right;
+	margin-top: -40px;
+	background: #fff;
+	height: 431px;
+}
+#portfolio_tem .right_box p{
+	font-size: 16px;
+	line-height: 22px;
+	margin: 0;
+	color: #3F3F3F;
+}
+#portfolio_tem .right_box p.text_owner{
+	background: #eee;
+	width: 100%;
+}
+
+#remoteVideo { 
+	height: 431px;
+	width: 100%;
+	background: #000;
+	border-radius: 5px;
+	margin-bottom: 20px;
+}
+#localVideo { 
+	height: 100px;
+	background: #000;
+	border-radius: 5px;
+}
+
+/* Responsive
+-------------------------------------------------- */
+
+/* Large desktop */
+@media (min-width: 1200px) {
+
+}
+@media (min-width: 980px) {
+
+}
+@media (max-width: 979px) {
+	
+}
+/* Portrait tablet to landscape and desktop */
+@media (min-width: 768px) and (max-width: 979px) { 
+	#portfolio_tem .left_box .big{
+		height: 372px;
+	}
+}	
+/* Landscape phone to portrait tablet */
+@media (max-width: 767px) {
+	#portfolio_tem .left_box{
+		margin-bottom: 50px;
+	}
+	#portfolio_tem .left_box .thumbs{
+		overflow: hidden;
+	}
+}
+/* Landscape phones and down */
+@media (max-width: 480px) {
+	#portfolio_tem .left_box .big {
+		max-height: 350px;
+	}
+	#portfolio_tem .left_box .big img {
+		margin-bottom: 10px;
+		max-height: 350px;
+	}
+	#portfolio_tem .thumbs .thumb{
+		margin-right: 5px;
+	}
+}
