@@ -53,14 +53,16 @@
             <div class="span7 left_box">
                 <video id="remoteVideo" autoplay poster="img/vimeo.jpg"></video>
                 <video id="localVideo" autoplay muted></video>
+                <a onclick="call()" id="callButton" class="specialButton">call</a>
             </div>
 
             <div class="span5 right_box">
-                <p>friends</p>
-                <p class="text_owner">my</p>
-            </div>
-            <div>
-                <p>123</p>
+                <div class="chat_window">
+                    <p>friends</p>
+                    <p class="text_owner">my</p>
+                </div>
+                <input type="text" placeholder="Enter message" size="150"></input>
+                <a href="" id="sendButton" class="specialButton">send</a>
             </div>
         </div>
     </div>
@@ -99,5 +101,52 @@
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/theme.js"></script>
+    <script src="http://cdn.peerjs.com/0.3/peer.js"></script>
+    <script>
+        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+        function gotStream(stream) {
+            document.getElementById("localVideo").src = URL.createObjectURL(stream);
+            window.localStream = stream;
+        }
+        function error(error) {console.log(error);}
+
+        function call() {
+            if (window.existingCall) {
+                window.existingCall.close();
+            }
+
+            var stream = navigator.getUserMedia({ audio: true, video: true }, gotStream, error);
+
+            var call = peer.call('user2',window.localStream);
+            window.existingCall = call;
+        }
+        
+        var session = '';
+
+        $.post('/session', {}, function(json) {session = json['peer_id'];}, 'json')
+
+        var peer = new Peer(session, {host: 'rtchat.dit.in.ua', port:'8888', config: {'iceServers': [
+            { url: 'stun:stun.l.google.com:19302' }]}});
+
+        peer.on('open', function(){
+            console.log(peer.id);
+        });
+
+        peer.on('call', function(call){
+            call.answer(window.localStream);
+            call.on('stream', function(stream){
+                document.getElementById("remoteVideo").src = URL.createObjectURL(stream);
+            });
+        });
+        peer.on('error', function(err){
+            alert(err.message);
+        });
+
+  
+  </script>
+
+
+
+    </script>
 </body>
 </html>
