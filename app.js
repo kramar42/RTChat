@@ -61,19 +61,26 @@ app.configure(function() {
     app.use(app.router);
     app.use(express.static(path.join(__dirname, 'public')));
 
-    app.all('/', function checkAuth(req, res, next) {
-        if (!req.session.user) {
-            res.render('login.jade');
-        } else {
-            next();
-        }
-    });
-
     //add db-s to request
     app.all('*', function(req, res, next) {
         req.mongo = app.mongo;
         req.redis = app.redis;
         next();
+    });
+
+    app.all('/', function checkAuth(req, res, next) {
+        if (!req.session.user) {
+            res.render('login.jade');
+        } else {
+            req.redis.exists(req.session.user.email, function(err, exists) {
+                if (err) throw err;
+                if (!exists) {
+                    res.render('login.jade');
+                } else {
+                    next();
+                }
+            });
+        }
     });
 
     //params
@@ -93,17 +100,6 @@ app.configure(function() {
 
     app.param('id', /\d+/);
     app.param('username', /\w+/);
-    app.param('roomname', /\w+/);
-
-    app.login = function(req, res, email) {
-        var email = req.session.user.email
-        var session = crypto.createHash('sha1').update(email +
-                new Date().getTime()).digest('hex');
-        req.redis.hset(email, 'session', session, function(err) {
-            if (err) throw err;
-            res.redirect('/');
-        });
-    };
 });
 
 app.configure('development', function() {
@@ -123,7 +119,7 @@ app.get('/oauth2/google', google.google);
 app.get('/oauth2/google/auth', google.google_auth);
 
 app.get('/oauth2/clef', clef.clef);
-app.get('/oauth2/clef/logout', clef.clef_logout);
+app.post('/oauth2/clef/logout', clef.clef_logout);
 
 app.get('/getfriends', users.getfriends);
 app.get('/getonlinefriends', users.getonlinefriends);

@@ -1,3 +1,16 @@
+var crypto = require('crypto');
+
+exports.login = function(req, res, email, next) {
+    var session = crypto.createHash('sha1').update(email +
+            new Date().getTime()).digest('hex');
+    req.session.user = {email: email};
+    req.redis.hset(email, 'session', session, function(err) {
+        if (err) throw err;
+        next(req, res);
+        res.redirect('/');
+    });
+};
+
 exports.session = function(req, res) {
     req.redis.hget(req.session.user.email, 'session', function(err, session) {
         if (err) throw err;

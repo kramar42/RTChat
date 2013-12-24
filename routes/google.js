@@ -1,3 +1,5 @@
+var request = require('request');
+
 var GOOGLE_APP_ID = '679216768366-eqs4cvu2scd9bm4bjahmsn1mesv428g7.apps.googleusercontent.com',
     GOOGLE_APP_SECRET = 'W9dxaEJrBCG3dM1NAimLMRxU';
 
@@ -19,7 +21,7 @@ exports.google_auth = function(req, res) {
         request.get('https://www.googleapis.com/userinfo/email?alt=json&access_token=' + token,
             function(err, response, body) {
                 var resp = JSON.parse(body)['data'];
-                app.login(req, res, resp['email']);
+                req.login(req, res, resp['email']);
             });
     });
 };
