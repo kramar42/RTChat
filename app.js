@@ -1,17 +1,14 @@
-
-/**
- * Module dependencies.
- */
-
 var express = require('express')
 , http = require('http')
 , path = require('path')
 , url = require('url')
 , request = require('request')
+, crypto = require('crypto')
 
-, api = require('./routes/api')
 , users = require('./routes/users')
-, rooms = require('./routes/rooms')
+
+, google = require('./routes/google')
+, clef = require('./routes/clef')
 
 , redis = require('redis')
 , mongo_client = require('mongodb').MongoClient;
@@ -72,7 +69,6 @@ app.configure(function() {
         }
     });
 
-
     //add db-s to request
     app.all('*', function(req, res, next) {
         req.mongo = app.mongo;
@@ -94,9 +90,20 @@ app.configure(function() {
             }
         }
     });
+
     app.param('id', /\d+/);
     app.param('username', /\w+/);
     app.param('roomname', /\w+/);
+
+    app.login = function(req, res, email) {
+        var email = req.session.user.email
+        var session = crypto.createHash('sha1').update(email +
+                new Date().getTime()).digest('hex');
+        req.redis.hset(email, 'session', session, function(err) {
+            if (err) throw err;
+            res.redirect('/');
+        });
+    };
 });
 
 app.configure('development', function() {
@@ -107,116 +114,17 @@ app.listen(app.get('port'), function() {
     console.log('Express server listening on port ' + app.get('port'));
 });
 
-var CLEF_APP_ID = '5f0c97b3ac2fe0f8c7ffedcf058140fe',
-    CLEF_APP_SECRET = 'd7c79d9885e3beba070c18669591955a';
-
-var GOOGLE_APP_ID = '679216768366-eqs4cvu2scd9bm4bjahmsn1mesv428g7.apps.googleusercontent.com',
-    GOOGLE_APP_SECRET = 'W9dxaEJrBCG3dM1NAimLMRxU';
-
 app.get('/', function(req, res) {
     var user = req.session.user;
-    console.log(user);
     res.render('index.jade', {user: user});
 });
 
-app.get('/oauth2/clef', function(req, res) {
-    var code = req.param('code');
-    var url = 'https://clef.io/api/v1/authorize';
-    var form = {app_id:CLEF_APP_ID, app_secret:CLEF_APP_SECRET, code:code};
+app.get('/oauth2/google', google.google);
+app.get('/oauth2/google/auth', google.google_auth);
 
-    request.post({url:url, form:form}, function(error, response, body) {
-        var token = JSON.parse(body)['access_token'];
-        request.get('https://clef.io/api/v1/info?access_token=' + token,
-            function(error, response, body) {
-                /* {
-                  info: {
-                    id: '12345',
-                    first_name: 'Jesse',
-                    last_name: 'Pollak',
-                    phone_number: '1234567890',
-                    email: 'jesse@getclef.com'
-                  },
-                  success: true
-                }
-                */
-                var resp = JSON.parse(body)['info'];
-                req.session.user = {'email': resp['email']};
-                res.redirect('/');
-            });
-    });
-});
+app.get('/oauth2/clef', clef.clef);
+app.get('/oauth2/clef/logout', clef.clef_logout);
 
-app.post('/oauth2/clef/logout', function(req, res) {
-    var url = "https://clef.io/api/v1/logout";
-    var logout_token = req.body['logout_token'];
-    if (logout_token) {
-        console.log(logout_token);
-        form = {logout_token:logout_token,app_id:CLEF_APP_ID,app_secret:CLEF_APP_SECRET};
-        request.post({url:url, form:form}, function(err, response, body) {
-            console.log(JSON.parse(body)['clef_id']);
-            res.send('ok');
-        });
-    }
-});
-
-app.get('/oauth2/google', function(req, res) {
-    res.redirect("https://accounts.google.com/o/oauth2/auth?scope=email&" +
-        "response_type=code&client_id=" + GOOGLE_APP_ID +
-        "&redirect_uri=http%3A%2F%2Frtchat.dit.in.ua%3A8085%2Foauth2%2Fgoogle%2Fauth");
-});
-
-app.get('/oauth2/google/auth', function(req, res) {
-    var code = req.param('code');
-    var url = 'https://accounts.google.com/o/oauth2/token';
-    var form = {client_id:GOOGLE_APP_ID, client_secret:GOOGLE_APP_SECRET,
-        code:code, redirect_uri:'http://rtchat.dit.in.ua:8085/oauth2/google/auth',
-        grant_type:'authorization_code'};
-
-    request.post({url:url, form:form}, function(error, response, body) {
-        var token = JSON.parse(body)['access_token'];
-        request.get('https://www.googleapis.com/userinfo/email?alt=json&access_token=' + token,
-            function(err, response, body) {
-                var resp = JSON.parse(body)['data'];
-                req.session.user = {'email': resp['email']};
-                console.log(req.session);
-                res.redirect('/');
-            });
-    });
-});
-
-app.get('/getfriends', function(req, res) {
-    req.mongo.users.findOne({'email': req.session.user.email}, {'friends': true}, function(err, friends) {
-        if (err) throw err;
-        var result = [];
-        var multi = req.redis.multi();
-        friends['friends'].forEach(function(friend) {
-            multi.exists(friend, function(err, exists) {
-                if (err) throw err;
-                if (exists) result.push(friend);
-            });
-        });
-        multi.exec(function(err, r) {
-            if (err) throw err;
-            res.send(result);
-        });
-    });
-});
-
-app.get('/getonlinefriends', function(req, res) {
-    req.mongo.users.findOne({'email': req.session.user.email}, {'_id': true}, function(err, friends) {
-        if (err) throw err;
-        var result = [];
-        var multi = req.redis.multi();
-        friends['friends'].forEach(function(friend) {
-            multi.exists(friend, function(err, exists) {
-                if (err) throw err;
-                if (exists) result.push(friend);
-            });
-        });
-        multi.exec(function(err, r) {
-            if (err) throw err;
-            res.send(result);
-        });
-    });
-});
+app.get('/getfriends', users.getfriends);
+app.get('/getonlinefriends', users.getonlinefriends);
 

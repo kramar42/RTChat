@@ -1,74 +1,32 @@
-
-/*
- * USERS
- */
-
-var gethash = require('./hash').hash;
-
-exports.list = function(req, res) {
-	req.redis.keys('*', function(err, keys) {
-		if (err) throw err;
-		var multi = req.redis.multi();
-		keys.forEach(function(key) {
-			multi.hget(key, 'name');
-		});
-		multi.exec(function(err, usernames) {
-			if (err) throw err;
-			console.log(usernames);
-			res.render('users.jade', {keys: keys, usernames: usernames});
-		});
-	});
-}
-
-exports.user = function(req, res) {
-	req.redis.hgetall(req.params.id, function(err, result) {
-		if (err) throw err;
-		res.send(result);
-	});
-}
-
-exports.login = function(req, res) {
-    var hash = gethash(req);
-
-    req.redis.exists(hash, function(err, exists) {
+exports.session = function(req, res) {
+    req.redis.hget(req.session.user.email, 'session', function(err, session) {
         if (err) throw err;
-        if (exists) res.redirect('/');
-        else {
-            res.render('login.jade');
-        }
+        res.send(session);
     });
-}
-
-exports.loginp = function(req, res) {
-    var hash = gethash(req);
-    var name = req.body.name;
-
-    req.redis.exists(hash, function(err, exists) {
-        if (err) throw err;
-        if (exists) res.redirect('/');
-        else {
-            if (!name) res.redirect('#');
-			req.redis.multi()
-				.expire(hash, 60*30)
-				.hmset(hash, {'name': req.body.name})
-				.exec(function(err) {
-					if (err) throw err;
-					res.redirect('/');
-			});
-		}
-	});
 };
 
-exports.logout = function(req, res) {
-    var hash = gethash(req);
-
-    req.redis.exists(hash, function(err, exists) {
+exports.getfriends = function(req, res) {
+    req.mongo.users.findOne({'email': req.session.user.email}, {'friends': true}, function(err, friends) {
         if (err) throw err;
-        if (exists) {
-            req.redis.del(hash, function(err) {
-                if (err) throw err;
-                res.redirect('/');
-            });
-        } else res.redirect('/');
+        res.send(friends);
     });
-}
+};
+
+exports.getonlinefriends = function(req, res) {
+    req.mongo.users.findOne({'email': req.session.user.email}, {'_id': true}, function(err, friends) {
+        if (err) throw err;
+        var result = [];
+        var multi = req.redis.multi();
+        friends['friends'].forEach(function(friend) {
+            multi.exists(friend, function(err, exists) {
+                if (err) throw err;
+                if (exists) result.push(friend);
+            });
+        });
+        multi.exec(function(err, r) {
+            if (err) throw err;
+            res.send(result);
+        });
+    });
+};
+
