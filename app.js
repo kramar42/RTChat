@@ -107,18 +107,22 @@ app.listen(app.get('port'), function() {
     console.log('Express server listening on port ' + app.get('port'));
 });
 
-var APP_ID = '5f0c97b3ac2fe0f8c7ffedcf058140fe',
-    APP_SECRET = 'd7c79d9885e3beba070c18669591955a';
+var CLEF_APP_ID = '5f0c97b3ac2fe0f8c7ffedcf058140fe',
+    CLEF_APP_SECRET = 'd7c79d9885e3beba070c18669591955a';
+
+var GOOGLE_APP_ID = '679216768366-eqs4cvu2scd9bm4bjahmsn1mesv428g7.apps.googleusercontent.com',
+    GOOGLE_APP_SECRET = 'W9dxaEJrBCG3dM1NAimLMRxU';
 
 app.get('/', function(req, res) {
     var user = req.session.user;
+    console.log(user);
     res.render('index.jade', {user: user});
 });
 
 app.get('/oauth2/clef', function(req, res) {
     var code = req.param('code');
     var url = 'https://clef.io/api/v1/authorize';
-    var form = {app_id:APP_ID, app_secret:APP_SECRET, code:code};
+    var form = {app_id:CLEF_APP_ID, app_secret:CLEF_APP_SECRET, code:code};
 
     request.post({url:url, form:form}, function(error, response, body) {
         var token = JSON.parse(body)['access_token'];
@@ -135,7 +139,7 @@ app.get('/oauth2/clef', function(req, res) {
                   success: true
                 }
                 */
-                resp = JSON.parse(body)['info'];
+                var resp = JSON.parse(body)['info'];
                 req.session.user = {'email': resp['email']};
                 res.redirect('/');
             });
@@ -147,12 +151,37 @@ app.post('/oauth2/clef/logout', function(req, res) {
     var logout_token = req.body['logout_token'];
     if (logout_token) {
         console.log(logout_token);
-        form = {logout_token:logout_token,app_id:APP_ID,app_secret:APP_SECRET};
+        form = {logout_token:logout_token,app_id:CLEF_APP_ID,app_secret:CLEF_APP_SECRET};
         request.post({url:url, form:form}, function(err, response, body) {
             console.log(JSON.parse(body)['clef_id']);
             res.send('ok');
         });
     }
+});
+
+app.get('/oauth2/google', function(req, res) {
+    res.redirect("https://accounts.google.com/o/oauth2/auth?scope=email&" +
+        "response_type=code&client_id=" + GOOGLE_APP_ID +
+        "&redirect_uri=http%3A%2F%2Frtchat.dit.in.ua%3A8085%2Foauth2%2Fgoogle%2Fauth");
+});
+
+app.get('/oauth2/google/auth', function(req, res) {
+    var code = req.param('code');
+    var url = 'https://accounts.google.com/o/oauth2/token';
+    var form = {client_id:GOOGLE_APP_ID, client_secret:GOOGLE_APP_SECRET,
+        code:code, redirect_uri:'http://rtchat.dit.in.ua:8085/oauth2/google/auth',
+        grant_type:'authorization_code'};
+
+    request.post({url:url, form:form}, function(error, response, body) {
+        var token = JSON.parse(body)['access_token'];
+        request.get('https://www.googleapis.com/userinfo/email?alt=json&access_token=' + token,
+            function(err, response, body) {
+                var resp = JSON.parse(body)['data'];
+                req.session.user = {'email': resp['email']};
+                console.log(req.session);
+                res.redirect('/');
+            });
+    });
 });
 
 app.get('/getfriends', function(req, res) {
